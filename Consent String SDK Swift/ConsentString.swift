@@ -9,7 +9,11 @@
 import Foundation
 
 class ConsentString:ConsentStringProtocol {
-    
+
+    enum Error: Swift.Error {
+        case invalidEncodingType
+    }
+
     /**
      The current Consent String.  Setting will allow replacement of the curr
  */
@@ -41,18 +45,39 @@ class ConsentString:ConsentStringProtocol {
         }
         consentData = dataValue
     }
-    
+
+    public init(data: Data) throws {
+        self.consentData = data
+        guard let decodedData = Data(base64Encoded: data) else { throw ConsentStringError.base64DecodingFailed }
+        // decode base 64, then remove any padding
+        guard let string = String(data: decodedData, encoding: .utf8) else {
+            throw ConsentStringError.base64DecodingFailed
+        }
+        self.consentString = string
+    }
+
+    public var created: Date {
+        return Date(timeIntervalSince1970: TimeInterval(consentData.intValue(for: Constants.created)) / 10)
+    }
+
+    public var updated: Date {
+        return Date(timeIntervalSince1970: TimeInterval(consentData.intValue(for: Constants.updated)) / 10 )
+    }
     
     public var cmpId: Int {
-        return Int(consentData.intValue(fromBit: 78, toBit: 89))
+        return Int(consentData.intValue(for: Constants.cmpIdentifier))
+    }
+
+    public var cmpVersion: Int {
+        return Int(consentData.intValue(for: Constants.cmpVersion))
     }
     
     public var consentScreen: Int {
-        return Int(consentData.intValue(fromBit: 102, toBit: 107))
+        return Int(consentData.intValue(for: Constants.consentScreen))
     }
     
     public var consentLanguage: String {
-        var data = consentData.data(fromBit: 108, toBit: 119)
+        var data = consentData.data(for: Constants.consentLanguage)
         data.insert(0, at: 0)
         let string = data.base64EncodedString()
         return String(string[string.index(string.startIndex, offsetBy: 2)...])
@@ -85,17 +110,28 @@ class ConsentString:ConsentStringProtocol {
         }
         return false
     }
+
+    public var vendorListVersion: Int {
+        return Int(consentData.intValue(for: Constants.vendorListVersion))
+    }
     
     //Used to determine whether we need to check for a vendor ID at all if it's greater than this value
-    private var maxVendorId : Int {
+    public var maxVendorId : Int {
         get {
-            return Int(consentData.intValue(fromBit: 156, toBit: 171))
+            return Int(consentData.intValue(for: Constants.maxVendorIdentifier))
         }
+    }
+
+    public func encodingType() throws -> VendorEncodingType {
+        guard let encodingType = VendorEncodingType(rawValue: Int(consentData.intValue(for: Constants.encodingType))) else {
+            throw Error.invalidEncodingType
+        }
+        return encodingType
     }
     
     private var isBitField:Bool {
         get {
-            let value = consentData.intValue(fromBit: 172, toBit: 172)
+            let value = consentData.intValue(for: Constants.encodingType)
             return value == 0
         }
     }
@@ -105,6 +141,8 @@ class ConsentString:ConsentStringProtocol {
             return !isBitField
         }
     }
+
+
     
     private let bitFieldVendorStart:Int64 = 173
     private let rangeDefaultConsent:Int64 = 173
