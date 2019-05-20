@@ -12,6 +12,7 @@
 		0BA327D7228EC23200606697 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BA327D6228EC23200606697 /* Constants.swift */; };
 		0BA327D9228EC84900606697 /* ConsentStringBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BA327D8228EC84900606697 /* ConsentStringBuilderTests.swift */; };
 		0BA327DB228ED14600606697 /* VendorEncodingType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BA327DA228ED14600606697 /* VendorEncodingType.swift */; };
+		0BAECEE12292B9A000CC4DDB /* BinaryStringTestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BAECEE02292B9A000CC4DDB /* BinaryStringTestSupport.swift */; };
 		F142B52A2093A1C5001ABE60 /* Consent_String_SDK_Swift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F142B5202093A1C5001ABE60 /* Consent_String_SDK_Swift.framework */; };
 		F142B52F2093A1C5001ABE60 /* Consent_String_SDK_SwiftTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F142B52E2093A1C5001ABE60 /* Consent_String_SDK_SwiftTests.swift */; };
 		F142B5312093A1C5001ABE60 /* Consent_String_SDK_Swift.h in Headers */ = {isa = PBXBuildFile; fileRef = F142B5232093A1C5001ABE60 /* Consent_String_SDK_Swift.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -38,6 +39,7 @@
 		0BA327D6228EC23200606697 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		0BA327D8228EC84900606697 /* ConsentStringBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConsentStringBuilderTests.swift; sourceTree = "<group>"; };
 		0BA327DA228ED14600606697 /* VendorEncodingType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VendorEncodingType.swift; sourceTree = "<group>"; };
+		0BAECEE02292B9A000CC4DDB /* BinaryStringTestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BinaryStringTestSupport.swift; sourceTree = "<group>"; };
 		F142B5202093A1C5001ABE60 /* Consent_String_SDK_Swift.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Consent_String_SDK_Swift.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		F142B5232093A1C5001ABE60 /* Consent_String_SDK_Swift.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Consent_String_SDK_Swift.h; sourceTree = "<group>"; };
 		F142B5242093A1C5001ABE60 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -111,6 +113,7 @@
 			children = (
 				F142B52E2093A1C5001ABE60 /* Consent_String_SDK_SwiftTests.swift */,
 				0BA327D8228EC84900606697 /* ConsentStringBuilderTests.swift */,
+				0BAECEE02292B9A000CC4DDB /* BinaryStringTestSupport.swift */,
 				F142B5302093A1C5001ABE60 /* Info.plist */,
 			);
 			path = "Consent String SDK SwiftTests";
@@ -242,6 +245,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F142B52F2093A1C5001ABE60 /* Consent_String_SDK_SwiftTests.swift in Sources */,
+				0BAECEE12292B9A000CC4DDB /* BinaryStringTestSupport.swift in Sources */,
 				0BA327D9228EC84900606697 /* ConsentStringBuilderTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
