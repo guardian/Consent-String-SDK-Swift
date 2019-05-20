@@ -38,8 +38,12 @@ class Consent_String_SDK_SwiftTests: XCTestCase {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
         super.tearDown()
     }
-    
-    
+
+    func testDecoding() throws {
+        let data = Data(base64Encoded: "BOMYO7eOMYO7eAABAENAAAAAAAAoAAA".base64Padded)!
+        let consentString = try ConsentString(data: data)
+        print("string: \(consentString.consentString)")
+    }
     
     func testPerformance() {
         self.measure {
