@@ -89,10 +89,9 @@ public struct ConsentStringBuilder {
             bitBufferSizeInBits = Constants.vendorBitFieldOffset + maxVendorId
         }
 
-        // Create new bit buffer
+        // Create new string representing the binary data
         let (byteCount, bitRemainder) = bitBufferSizeInBits.quotientAndRemainder(dividingBy: 8)
         let totalBytes = byteCount + (bitRemainder > 0 ? 1 : 0)
-        var data = Data(repeating: 0, count: totalBytes)
 
         var consentString = String(repeating: "0", count: totalBytes * 8)
 
@@ -122,7 +121,7 @@ public struct ConsentStringBuilder {
 
         // range sections
         if vendorEncodingType == .range {
-            // range encoding
+            // TODO: range encoding
         } else {
             // bit field encoding
             for i in 0..<maxVendorId {
@@ -135,7 +134,9 @@ public struct ConsentStringBuilder {
             }
         }
 
-        return consentString
+        // convert the string representation into data
+        let data = Data(bytes: consentString.split(by: 8).compactMap { UInt8($0, radix: 2) })
+        return data.base64EncodedString()
     }
 
 }
@@ -148,3 +149,17 @@ extension String {
     }
 }
 
+extension String {
+    func split(by length: Int) -> [String] {
+        var startIndex = self.startIndex
+        var results = [Substring]()
+
+        while startIndex < self.endIndex {
+            let endIndex = self.index(startIndex, offsetBy: length, limitedBy: self.endIndex) ?? self.endIndex
+            results.append(self[startIndex..<endIndex])
+            startIndex = endIndex
+        }
+
+        return results.map { String($0) }
+    }
+}
