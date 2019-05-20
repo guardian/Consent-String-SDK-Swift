@@ -117,6 +117,14 @@ extension Data {
         let value = UInt64(bigEndian: dataValue.withUnsafeBytes { $0.pointee })
         return Int64(value)
     }
+
+    func data(for range: NSRange) -> Data {
+        return data(fromBit: Int64(range.lowerBound), toBit: Int64(range.upperBound - 1))
+    }
+
+    func intValue(for range: NSRange) -> Int64 {
+        return intValue(fromBit: Int64(range.lowerBound), toBit: Int64(range.upperBound - 1))
+    }
   
 }
 
