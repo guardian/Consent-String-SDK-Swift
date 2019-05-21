@@ -10,6 +10,11 @@ import Foundation
 
 public struct ConsentStringBuilder {
 
+    enum Error: Swift.Error {
+        case invalidLanguageCode
+    }
+
+    let version: Int = 1
     /// Epoch deciseconds when record was created
     let created: Date
 
@@ -54,20 +59,24 @@ public struct ConsentStringBuilder {
 
     func buildUsingBitField() throws -> String {
         var consentString = ""
-        consentString.append(String(1, radix: 2).padLeft(toLength: Constants.version.length))
-        consentString.append(String(Int(created.timeIntervalSince1970 * 1000 / 100), radix: 2).padLeft(toLength: Constants.created.length))
-        consentString.append(String(Int(updated.timeIntervalSince1970 * 1000 / 100), radix: 2).padLeft(toLength: Constants.updated.length))
-        consentString.append(String(cmpIdentifier, radix: 2).padLeft(toLength: Constants.cmpIdentifier.length))
-        consentString.append(String(cmpVersion, radix: 2).padLeft(toLength: Constants.cmpVersion.length))
-        consentString.append(String(consentScreenId, radix: 2).padLeft(toLength: Constants.consentScreen.length))
+        consentString.append(encode(int: version, length: Constants.version.length))
+        consentString.append(encode(date: created, length: Constants.created.length))
+        consentString.append(encode(date: updated, length: Constants.updated.length))
+        consentString.append(encode(int: cmpIdentifier, length: Constants.cmpIdentifier.length))
+        consentString.append(encode(int: cmpVersion, length: Constants.cmpVersion.length))
+        consentString.append(encode(int: consentScreenId, length: Constants.consentScreen.length))
 
-        let language = String(consentLanguage[consentLanguage.index(consentLanguage.startIndex, offsetBy: 0)].asciiValue! - 65, radix: 2).padLeft(toLength: 6) + String(consentLanguage[consentLanguage.index(consentLanguage.startIndex, offsetBy: 1)].asciiValue! - 65, radix: 2).padLeft(toLength: 6)
-        consentString.append(language)
-        consentString.append(String(vendorListVersion, radix: 2).padLeft(toLength: Constants.vendorListVersion.length))
-        consentString.append(encodePurposeBitField(for: allowedPurposes))
-        consentString.append(String(maxVendorId, radix: 2).padLeft(toLength: Constants.maxVendorIdentifier.length))
-        consentString.append(String(VendorEncodingType.bitField.rawValue, radix: 2).padLeft(toLength: Constants.encodingType.length))
-        consentString.append(encodeVendorBitField(for: allowedVendorIds, maxVendorId: maxVendorId))
+        guard let firstLanguageCharacter = consentLanguage[consentLanguage.index(consentLanguage.startIndex, offsetBy: 0)].asciiValue, let secondLanguageCharacter = consentLanguage[consentLanguage.index(consentLanguage.startIndex, offsetBy: 1)].asciiValue else {
+            throw Error.invalidLanguageCode
+        }
+
+        consentString.append(encode(int: Int(firstLanguageCharacter - 65), length: Constants.consentLanguage.length / 2))
+        consentString.append(encode(int: Int(secondLanguageCharacter - 65), length: Constants.consentLanguage.length / 2))
+        consentString.append(encode(int: vendorListVersion, length: Constants.vendorListVersion.length))
+        consentString.append(encode(purposeBitFieldForPurposes: allowedPurposes))
+        consentString.append(encode(int: maxVendorId, length: Constants.maxVendorIdentifier.length))
+        consentString.append(encode(int: VendorEncodingType.bitField.rawValue, length: Constants.encodingType.length))
+        consentString.append(encode(vendorBitFieldForVendors: allowedVendorIds, maxVendorId: maxVendorId))
 
         // pad the string to a byte boundary
         let (byteCount, bitRemainder) = consentString.count.quotientAndRemainder(dividingBy: 8)
@@ -81,23 +90,27 @@ public struct ConsentStringBuilder {
 
     func buildUsingRanges() throws -> String {
         var consentString = ""
-        consentString.append(String(1, radix: 2).padLeft(toLength: Constants.version.length))
-        consentString.append(String(Int(created.timeIntervalSince1970 * 1000 / 100), radix: 2).padLeft(toLength: Constants.created.length))
-        consentString.append(String(Int(updated.timeIntervalSince1970 * 1000 / 100), radix: 2).padLeft(toLength: Constants.updated.length))
-        consentString.append(String(cmpIdentifier, radix: 2).padLeft(toLength: Constants.cmpIdentifier.length))
-        consentString.append(String(cmpVersion, radix: 2).padLeft(toLength: Constants.cmpVersion.length))
-        consentString.append(String(consentScreenId, radix: 2).padLeft(toLength: Constants.consentScreen.length))
+        consentString.append(encode(int: version, length: Constants.version.length))
+        consentString.append(encode(date: created, length: Constants.created.length))
+        consentString.append(encode(date: updated, length: Constants.updated.length))
+        consentString.append(encode(int: cmpIdentifier, length: Constants.cmpIdentifier.length))
+        consentString.append(encode(int: cmpVersion, length: Constants.cmpVersion.length))
+        consentString.append(encode(int: consentScreenId, length: Constants.consentScreen.length))
 
-        let language = String(consentLanguage[consentLanguage.index(consentLanguage.startIndex, offsetBy: 0)].asciiValue! - 65, radix: 2).padLeft(toLength: 6) + String(consentLanguage[consentLanguage.index(consentLanguage.startIndex, offsetBy: 1)].asciiValue! - 65, radix: 2).padLeft(toLength: 6)
-        consentString.append(language)
-        consentString.append(String(vendorListVersion, radix: 2).padLeft(toLength: Constants.vendorListVersion.length))
-        consentString.append(encodePurposeBitField(for: allowedPurposes))
-        consentString.append(String(maxVendorId, radix: 2).padLeft(toLength: Constants.maxVendorIdentifier.length))
-        consentString.append(String(VendorEncodingType.range.rawValue, radix: 2).padLeft(toLength: Constants.encodingType.length))
-        consentString.append((defaultConsent ? "1" : "0").padLeft(toLength: Constants.defaultConsent.length))
+        guard let firstLanguageCharacter = consentLanguage[consentLanguage.index(consentLanguage.startIndex, offsetBy: 0)].asciiValue, let secondLanguageCharacter = consentLanguage[consentLanguage.index(consentLanguage.startIndex, offsetBy: 1)].asciiValue else {
+            throw Error.invalidLanguageCode
+        }
+
+        consentString.append(encode(int: Int(firstLanguageCharacter - 65), length: Constants.consentLanguage.length / 2))
+        consentString.append(encode(int: Int(secondLanguageCharacter - 65), length: Constants.consentLanguage.length / 2))
+        consentString.append(encode(int: vendorListVersion, length: Constants.vendorListVersion.length))
+        consentString.append(encode(purposeBitFieldForPurposes: allowedPurposes))
+        consentString.append(encode(int: maxVendorId, length: Constants.maxVendorIdentifier.length))
+        consentString.append(encode(int: VendorEncodingType.range.rawValue, length: Constants.encodingType.length))
+        consentString.append(encode(int: defaultConsent ? 1 : 0, length: Constants.defaultConsent.length))
 
         let ranges = self.ranges(for: allowedVendorIds, in: Set(1...maxVendorId), defaultConsent: defaultConsent)
-        consentString.append(encode(ranges))
+        consentString.append(encode(vendorRanges: ranges))
 
         // pad the string to a byte boundary
         let (byteCount, bitRemainder) = consentString.count.quotientAndRemainder(dividingBy: 8)
@@ -109,27 +122,35 @@ public struct ConsentStringBuilder {
         return data.base64EncodedString()
     }
 
-    func encodePurposeBitField(for purposes: Set<Int>) -> String {
+    func encode(int: Int, length: Int) -> String {
+        return String(int, radix: 2).padLeft(toLength: length)
+    }
+
+    func encode(date: Date, length: Int) -> String {
+        return encode(int: Int(created.timeIntervalSince1970 * 1000 / 100), length: length)
+    }
+
+    func encode(purposeBitFieldForPurposes purposes: Set<Int>) -> String {
         return (0..<Constants.purposes.length).reduce("") { $0 + (purposes.contains($1 + 1) ? "1" : "0") }
     }
 
-    func encodeVendorBitField(for vendors: Set<Int>, maxVendorId: Int) -> String {
+    func encode(vendorBitFieldForVendors vendors: Set<Int>, maxVendorId: Int) -> String {
         return (1...maxVendorId).reduce("") { $0 + (vendors.contains($1) ? "1" : "0") }
     }
 
-    func encode(_ ranges: [ClosedRange<Int>]) -> String {
+    func encode(vendorRanges ranges: [ClosedRange<Int>]) -> String {
         var string = ""
-        string.append(String(ranges.count, radix: 2).padLeft(toLength: Constants.numberOfEntries.length))
+        string.append(encode(int: ranges.count, length: Constants.numberOfEntries.length))
         for range in ranges {
             if range.count == 1 {
                 // single entry
-                string.append("0")
-                string.append(String(range.lowerBound, radix: 2).padLeft(toLength: Constants.vendorIdentifierSize))
+                string.append(encode(int: 0, length: 1))
+                string.append(encode(int: range.lowerBound, length: Constants.vendorIdentifierSize))
             } else {
                 // range entry
-                string.append("1")
-                string.append(String(range.lowerBound, radix: 2).padLeft(toLength: Constants.vendorIdentifierSize))
-                string.append(String(range.upperBound, radix: 2).padLeft(toLength: Constants.vendorIdentifierSize))
+                string.append(encode(int: 1, length: 1))
+                string.append(encode(int: range.lowerBound, length: Constants.vendorIdentifierSize))
+                string.append(encode(int: range.upperBound, length: Constants.vendorIdentifierSize))
             }
         }
         return string
@@ -164,14 +185,13 @@ public struct ConsentStringBuilder {
 }
 
 extension String {
-    func padLeft(with character: String = "0", toLength length: Int) -> String {
-        //return padding(toLength: length, withPad: character, startingAt: 0)
+    func padLeft(withCharacter character: String = "0", toLength length: Int) -> String {
         let padCount = length - count
         guard padCount > 0 else { return self }
         return String(repeating: character, count: padCount) + self
     }
 
-    func padRight(with character: String = "0", toLength length: Int) -> String {
+    func padRight(withCharacter character: String = "0", toLength length: Int) -> String {
         let padCount = length - count
         guard padCount > 0 else { return self }
         return self + String(repeating: character, count: padCount)
