@@ -15,6 +15,7 @@ public struct ConsentStringBuilder {
     }
 
     let version: Int = 1
+    
     /// Epoch deciseconds when record was created
     let created: Date
 
@@ -22,7 +23,7 @@ public struct ConsentStringBuilder {
     let updated: Date
 
     /// Consent Manager Provider ID that last updated the consent string
-    let cmpIdentifier: Int
+    let cmpId: Int
 
     /// Consent Manager Provider version
     let cmpVersion: Int
@@ -47,87 +48,86 @@ public struct ConsentStringBuilder {
     /// Set of allowed vendor IDs
     let allowedVendorIds: Set<Int>
 
+    init(created: Date = Date(), updated: Date = Date(), cmpId: Int, cmpVersion: Int, consentScreenId: Int, consentLanguage: String, allowedPurposes: Set<Int>, vendorListVersion: Int, maxVendorId: Int, defaultConsent: Bool, allowedVendorIds: Set<Int>) {
+        self.created = created
+        self.updated = updated
+        self.cmpId = cmpId
+        self.cmpVersion = cmpVersion
+        self.consentScreenId = consentScreenId
+        self.consentLanguage = consentLanguage
+        self.allowedPurposes = allowedPurposes
+        self.vendorListVersion = vendorListVersion
+        self.maxVendorId = maxVendorId
+        self.defaultConsent = defaultConsent
+        self.allowedVendorIds = allowedVendorIds
+    }
+
     public func build() throws -> String {
-        let bitField = try buildUsingBitField()
-        let ranges = try buildUsingRanges()
-        if bitField.count < ranges.count {
-            return bitField
+        let commonBinaryString = try commonConsentBinaryString()
+        // we encode by both methods (bit field and ranges) and use whichever is smallest
+        let encodingUsingBitField = convertBinaryStringToTrimmedBase64String(padStringToNearestByte(commonBinaryString + bitFieldBinaryString))
+        let encodingUsingRanges = convertBinaryStringToTrimmedBase64String(padStringToNearestByte(commonBinaryString + rangesBinaryString))
+        if encodingUsingBitField.count < encodingUsingRanges.count {
+            return encodingUsingBitField
         } else {
-            return ranges
+            return encodingUsingRanges
         }
     }
 
-    func buildUsingBitField() throws -> String {
+    func commonConsentBinaryString() throws -> String {
         var consentString = ""
-        consentString.append(encode(int: version, length: Constants.version.length))
-        consentString.append(encode(date: created, length: Constants.created.length))
-        consentString.append(encode(date: updated, length: Constants.updated.length))
-        consentString.append(encode(int: cmpIdentifier, length: Constants.cmpIdentifier.length))
-        consentString.append(encode(int: cmpVersion, length: Constants.cmpVersion.length))
-        consentString.append(encode(int: consentScreenId, length: Constants.consentScreen.length))
+        consentString.append(encode(integer: version, toLength: Constants.version.length))
+        consentString.append(encode(date: created, toLength: Constants.created.length))
+        consentString.append(encode(date: updated, toLength: Constants.updated.length))
+        consentString.append(encode(integer: cmpId, toLength: Constants.cmpIdentifier.length))
+        consentString.append(encode(integer: cmpVersion, toLength: Constants.cmpVersion.length))
+        consentString.append(encode(integer: consentScreenId, toLength: Constants.consentScreen.length))
 
-        guard let firstLanguageCharacter = consentLanguage[consentLanguage.index(consentLanguage.startIndex, offsetBy: 0)].asciiValue, let secondLanguageCharacter = consentLanguage[consentLanguage.index(consentLanguage.startIndex, offsetBy: 1)].asciiValue else {
+        guard let firstLanguageCharacter = consentLanguage[consentLanguage.index(consentLanguage.startIndex, offsetBy: 0)].asciiValue,
+            let secondLanguageCharacter = consentLanguage[consentLanguage.index(consentLanguage.startIndex, offsetBy: 1)].asciiValue else {
             throw Error.invalidLanguageCode
         }
 
-        consentString.append(encode(int: Int(firstLanguageCharacter - 65), length: Constants.consentLanguage.length / 2))
-        consentString.append(encode(int: Int(secondLanguageCharacter - 65), length: Constants.consentLanguage.length / 2))
-        consentString.append(encode(int: vendorListVersion, length: Constants.vendorListVersion.length))
+        consentString.append(encode(integer: Int(firstLanguageCharacter - 65), toLength: Constants.consentLanguage.length / 2))
+        consentString.append(encode(integer: Int(secondLanguageCharacter - 65), toLength: Constants.consentLanguage.length / 2))
+        consentString.append(encode(integer: vendorListVersion, toLength: Constants.vendorListVersion.length))
         consentString.append(encode(purposeBitFieldForPurposes: allowedPurposes))
-        consentString.append(encode(int: maxVendorId, length: Constants.maxVendorIdentifier.length))
-        consentString.append(encode(int: VendorEncodingType.bitField.rawValue, length: Constants.encodingType.length))
+        consentString.append(encode(integer: maxVendorId, toLength: Constants.maxVendorIdentifier.length))
+        return consentString
+    }
+
+    var bitFieldBinaryString: String {
+        var consentString = ""
+        consentString.append(encode(integer: VendorEncodingType.bitField.rawValue, toLength: Constants.encodingType.length))
         consentString.append(encode(vendorBitFieldForVendors: allowedVendorIds, maxVendorId: maxVendorId))
-
-        // pad the string to a byte boundary
-        let (byteCount, bitRemainder) = consentString.count.quotientAndRemainder(dividingBy: 8)
-        let totalBytes = byteCount + (bitRemainder > 0 ? 1 : 0)
-        let binaryString = consentString.padRight(toLength: totalBytes * 8)
-
-        // convert the string representation into data
-        let data = Data(bytes: binaryString.split(by: 8).compactMap { UInt8($0, radix: 2) })
-        return data.base64EncodedString()
+        return consentString
     }
 
-    func buildUsingRanges() throws -> String {
+    var rangesBinaryString: String {
         var consentString = ""
-        consentString.append(encode(int: version, length: Constants.version.length))
-        consentString.append(encode(date: created, length: Constants.created.length))
-        consentString.append(encode(date: updated, length: Constants.updated.length))
-        consentString.append(encode(int: cmpIdentifier, length: Constants.cmpIdentifier.length))
-        consentString.append(encode(int: cmpVersion, length: Constants.cmpVersion.length))
-        consentString.append(encode(int: consentScreenId, length: Constants.consentScreen.length))
+        consentString.append(encode(integer: VendorEncodingType.range.rawValue, toLength: Constants.encodingType.length))
+        consentString.append(encode(integer: defaultConsent ? 1 : 0, toLength: Constants.defaultConsent.length))
+        consentString.append(encode(vendorRanges: ranges(for: allowedVendorIds, in: Set(1...maxVendorId), defaultConsent: defaultConsent)))
+        return consentString
+    }
 
-        guard let firstLanguageCharacter = consentLanguage[consentLanguage.index(consentLanguage.startIndex, offsetBy: 0)].asciiValue, let secondLanguageCharacter = consentLanguage[consentLanguage.index(consentLanguage.startIndex, offsetBy: 1)].asciiValue else {
-            throw Error.invalidLanguageCode
-        }
+    func convertBinaryStringToTrimmedBase64String(_ string: String) -> String {
+        let data = Data(bytes: string.split(by: 8).compactMap { UInt8($0, radix: 2) })
+        return data.base64EncodedString().trimmingCharacters(in: ["="])
+    }
 
-        consentString.append(encode(int: Int(firstLanguageCharacter - 65), length: Constants.consentLanguage.length / 2))
-        consentString.append(encode(int: Int(secondLanguageCharacter - 65), length: Constants.consentLanguage.length / 2))
-        consentString.append(encode(int: vendorListVersion, length: Constants.vendorListVersion.length))
-        consentString.append(encode(purposeBitFieldForPurposes: allowedPurposes))
-        consentString.append(encode(int: maxVendorId, length: Constants.maxVendorIdentifier.length))
-        consentString.append(encode(int: VendorEncodingType.range.rawValue, length: Constants.encodingType.length))
-        consentString.append(encode(int: defaultConsent ? 1 : 0, length: Constants.defaultConsent.length))
-
-        let ranges = self.ranges(for: allowedVendorIds, in: Set(1...maxVendorId), defaultConsent: defaultConsent)
-        consentString.append(encode(vendorRanges: ranges))
-
-        // pad the string to a byte boundary
-        let (byteCount, bitRemainder) = consentString.count.quotientAndRemainder(dividingBy: 8)
+    func padStringToNearestByte(_ string: String) -> String {
+        let (byteCount, bitRemainder) = string.count.quotientAndRemainder(dividingBy: 8)
         let totalBytes = byteCount + (bitRemainder > 0 ? 1 : 0)
-        let binaryString = consentString.padRight(toLength: totalBytes * 8)
-
-        // convert the string representation into data
-        let data = Data(bytes: binaryString.split(by: 8).compactMap { UInt8($0, radix: 2) })
-        return data.base64EncodedString()
+        return string.padRight(toLength: totalBytes * 8)
     }
 
-    func encode(int: Int, length: Int) -> String {
-        return String(int, radix: 2).padLeft(toLength: length)
+    func encode(integer: Int, toLength length: Int) -> String {
+        return String(integer, radix: 2).padLeft(toLength: length)
     }
 
-    func encode(date: Date, length: Int) -> String {
-        return encode(int: Int(created.timeIntervalSince1970 * 1000 / 100), length: length)
+    func encode(date: Date, toLength length: Int) -> String {
+        return encode(integer: Int(date.timeIntervalSince1970 * 1000 / 100), toLength: length)
     }
 
     func encode(purposeBitFieldForPurposes purposes: Set<Int>) -> String {
@@ -140,42 +140,42 @@ public struct ConsentStringBuilder {
 
     func encode(vendorRanges ranges: [ClosedRange<Int>]) -> String {
         var string = ""
-        string.append(encode(int: ranges.count, length: Constants.numberOfEntries.length))
+        string.append(encode(integer: ranges.count, toLength: Constants.numberOfEntries.length))
         for range in ranges {
             if range.count == 1 {
                 // single entry
-                string.append(encode(int: 0, length: 1))
-                string.append(encode(int: range.lowerBound, length: Constants.vendorIdentifierSize))
+                string.append(encode(integer: 0, toLength: 1))
+                string.append(encode(integer: range.lowerBound, toLength: Constants.vendorIdentifierSize))
             } else {
                 // range entry
-                string.append(encode(int: 1, length: 1))
-                string.append(encode(int: range.lowerBound, length: Constants.vendorIdentifierSize))
-                string.append(encode(int: range.upperBound, length: Constants.vendorIdentifierSize))
+                string.append(encode(integer: 1, toLength: 1))
+                string.append(encode(integer: range.lowerBound, toLength: Constants.vendorIdentifierSize))
+                string.append(encode(integer: range.upperBound, toLength: Constants.vendorIdentifierSize))
             }
         }
         return string
     }
 
-    func ranges(for allowedVendorIds: Set<Int>, in vendorIds: Set<Int>, defaultConsent: Bool) -> [ClosedRange<Int>] {
-        let vendorIds = defaultConsent ? vendorIds.subtracting(allowedVendorIds).sorted() : allowedVendorIds.sorted()
+    func ranges(for allowedVendorIds: Set<Int>, in allVendorIds: Set<Int>, defaultConsent: Bool) -> [ClosedRange<Int>] {
+        let vendorsToEncode = defaultConsent ? allVendorIds.subtracting(allowedVendorIds).sorted() : allowedVendorIds.sorted()
 
         var ranges = [ClosedRange<Int>]()
         var currentRangeStart: Int?
-        for vendorId in vendorIds {
-            if vendorIds.contains(vendorId) {
+        for vendorId in allVendorIds.sorted() {
+            if vendorsToEncode.contains(vendorId) {
                 if currentRangeStart == nil {
                     // start a new range
                     currentRangeStart = vendorId
                 }
             } else if let rangeStart = currentRangeStart {
                 // close the range
-                ranges.append(rangeStart...vendorId)
+                ranges.append(rangeStart...vendorId-1)
                 currentRangeStart = nil
             }
         }
 
         // close any range open at the end
-        if let rangeStart = currentRangeStart, let last = vendorIds.last {
+        if let rangeStart = currentRangeStart, let last = vendorsToEncode.last {
             ranges.append(rangeStart...last)
             currentRangeStart = nil
         }
@@ -211,4 +211,23 @@ extension String {
 
         return results.map { String($0) }
     }
+}
+
+extension ConsentString {
+
+    convenience init(created: Date, updated: Date, cmpId: Int, cmpVersion: Int, consentScreenId: Int, consentLanguage: String, allowedPurposes: Set<Int>, vendorListVersion: Int, maxVendorId: Int, allowedVendorIds: Set<Int>) throws {
+        let builder = ConsentStringBuilder(created: created,
+                                           updated: updated, 
+                                           cmpId: cmpId,
+                                           cmpVersion: cmpVersion,
+                                           consentScreenId: consentScreenId,
+                                           consentLanguage: consentLanguage,
+                                           allowedPurposes: allowedPurposes,
+                                           vendorListVersion: vendorListVersion,
+                                           maxVendorId: maxVendorId,
+                                           defaultConsent: false,
+                                           allowedVendorIds: allowedVendorIds)
+        try self.init(consentString: try builder.build())
+    }
+
 }
