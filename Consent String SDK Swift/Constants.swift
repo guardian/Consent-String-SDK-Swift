@@ -21,7 +21,7 @@ public enum Constants {
     static let maxVendorIdentifier = NSRange(location: 156, length: 16)
     static let encodingType = NSRange(location: 172, length: 1)
     static let vendorBitFieldOffset = 173
-    static let defaultConsentOffset = 173
+    static let defaultConsent = NSRange(location: 173, length: 1)
     static let numberOfEntries = NSRange(location: 174, length: 12)
     static let rangeEntryOffset = 186
     static let vendorIdentifierSize = 16

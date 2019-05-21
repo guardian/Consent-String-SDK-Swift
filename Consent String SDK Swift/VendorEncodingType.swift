@@ -9,5 +9,6 @@
 import Foundation
 
 public enum VendorEncodingType: Int {
-    case bitfield, range
+    case bitField
+    case range
 }

@@ -8,7 +8,7 @@
 
 import Foundation
 
-public enum Purpose: Int64 {
+public enum Purpose: Int {
     case storageAndAccess = 1
     case personalization = 2
     case adSelection = 3
