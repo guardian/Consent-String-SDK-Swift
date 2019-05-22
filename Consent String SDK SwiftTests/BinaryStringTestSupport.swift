@@ -3,7 +3,7 @@
 //  Consent String SDK SwiftTests
 //
 //  Created by Alexander Edge on 20/05/2019.
-//  Copyright © 2019 Interactive Advertising Bureau. All rights reserved.
+//  Copyright © 2019 Guardian News & Media Ltd. All rights reserved.
 //
 
 import Foundation
