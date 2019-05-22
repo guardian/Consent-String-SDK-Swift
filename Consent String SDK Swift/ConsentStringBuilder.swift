@@ -17,6 +17,8 @@ public class ConsentStringBuilder {
     private let version: Int = 1
     private let asciiOffset: UInt8 = 65
 
+    public init() {}
+
     /// Build a v1 consent string
     ///
     /// - Parameters:
