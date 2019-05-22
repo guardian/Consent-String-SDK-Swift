@@ -53,11 +53,11 @@ class ConsentStringBuilderTests: XCTestCase, BinaryStringTestSupport {
     }
 
     func testUsesRangesOverBitField() throws {
-        XCTAssertEqual(try builder.build(created: Date(timeIntervalSince1970: 1510082155.4), updated: Date(timeIntervalSince1970: 1510082155.4), cmpId: 7, cmpVersion: 1, consentScreenId: 3, consentLanguage: "EN", allowedPurposes: [1,2,3], vendorListVersion: 8, maxVendorId: 2011, defaultConsent: true, allowedVendorIds: Set(1...2011).subtracting([9])), "BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA")
+        XCTAssertEqual(try builder.build(created: Date(timeIntervalSince1970: 1510082155.4), updated: Date(timeIntervalSince1970: 1510082155.4), cmpId: 7, cmpVersion: 1, consentScreenId: 3, consentLanguage: "EN", allowedPurposes: [.storageAndAccess, .personalization, .adSelection], vendorListVersion: 8, maxVendorId: 2011, defaultConsent: true, allowedVendorIds: Set<VendorIdentifier>(1...2011).subtracting([9])), "BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA")
     }
 
     func testUsesBitFieldOverRanges() throws {
-        let vendorIds = (1...234).compactMap { $0.isMultiple(of: 2) ? nil : $0 }
-         XCTAssertEqual(try builder.build(created: Date(timeIntervalSince1970: 1510082155.4), updated: Date(timeIntervalSince1970: 1510082155.4), cmpId: 7, cmpVersion: 1, consentScreenId: 3, consentLanguage: "EN", allowedPurposes: [1,2,3], vendorListVersion: 8, maxVendorId: 2011, defaultConsent: true, allowedVendorIds: Set(vendorIds)), "BOEFEAyOEFEAyAHABDENAI4AAAB9tVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+        let vendorIds = ClosedRange<VendorIdentifier>(1...234).compactMap { $0.isMultiple(of: 2) ? nil : $0 }
+         XCTAssertEqual(try builder.build(created: Date(timeIntervalSince1970: 1510082155.4), updated: Date(timeIntervalSince1970: 1510082155.4), cmpId: 7, cmpVersion: 1, consentScreenId: 3, consentLanguage: "EN", allowedPurposes: [.storageAndAccess, .personalization, .adSelection], vendorListVersion: 8, maxVendorId: 2011, defaultConsent: true, allowedVendorIds: Set(vendorIds)), "BOEFEAyOEFEAyAHABDENAI4AAAB9tVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
     }
 }
