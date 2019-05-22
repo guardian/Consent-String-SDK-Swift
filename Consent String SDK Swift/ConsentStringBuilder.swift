@@ -11,10 +11,11 @@ import Foundation
 public class ConsentStringBuilder {
 
     enum Error: Swift.Error {
-        case invalidLanguageCode
+        case invalidLanguageCode(String)
     }
 
     private let version: Int = 1
+    private let asciiOffset: UInt8 = 65
 
     /// Build a v1 consent string
     ///
@@ -53,13 +54,13 @@ public class ConsentStringBuilder {
         consentString.append(encode(integer: cmpVersion, toLength: NSRange.cmpVersion.length))
         consentString.append(encode(integer: consentScreenId, toLength: NSRange.consentScreen.length))
 
-        guard let firstLanguageCharacter = consentLanguage[consentLanguage.index(consentLanguage.startIndex, offsetBy: 0)].asciiValue,
-            let secondLanguageCharacter = consentLanguage[consentLanguage.index(consentLanguage.startIndex, offsetBy: 1)].asciiValue else {
-            throw Error.invalidLanguageCode
+        guard let firstLanguageCharacter = consentLanguage.uppercased()[consentLanguage.index(consentLanguage.startIndex, offsetBy: 0)].asciiValue, firstLanguageCharacter >= asciiOffset,
+            let secondLanguageCharacter = consentLanguage.uppercased()[consentLanguage.index(consentLanguage.startIndex, offsetBy: 1)].asciiValue, secondLanguageCharacter >= asciiOffset else {
+            throw Error.invalidLanguageCode(consentLanguage)
         }
 
-        consentString.append(encode(integer: Int(firstLanguageCharacter - 65), toLength: NSRange.consentLanguage.length / 2))
-        consentString.append(encode(integer: Int(secondLanguageCharacter - 65), toLength: NSRange.consentLanguage.length / 2))
+        consentString.append(encode(integer: firstLanguageCharacter - asciiOffset, toLength: NSRange.consentLanguage.length / 2))
+        consentString.append(encode(integer: secondLanguageCharacter - asciiOffset, toLength: NSRange.consentLanguage.length / 2))
         consentString.append(encode(integer: vendorListVersion, toLength: NSRange.vendorListVersion.length))
         consentString.append(encode(purposeBitFieldForPurposes: allowedPurposes))
         consentString.append(encode(integer: maxVendorId, toLength: NSRange.maxVendorIdentifier.length))
@@ -90,6 +91,10 @@ public class ConsentStringBuilder {
         let (byteCount, bitRemainder) = string.count.quotientAndRemainder(dividingBy: 8)
         let totalBytes = byteCount + (bitRemainder > 0 ? 1 : 0)
         return string.padRight(toLength: totalBytes * 8)
+    }
+
+    func encode(integer: UInt8, toLength length: Int) -> String {
+        return String(integer, radix: 2).padLeft(toLength: length)
     }
 
     func encode(integer: Int16, toLength length: Int) -> String {
