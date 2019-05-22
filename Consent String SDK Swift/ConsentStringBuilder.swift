@@ -187,7 +187,7 @@ private extension String {
     }
 }
 
-extension ConsentString {
+public extension ConsentString {
     convenience init(created: Date = Date(),
                      updated: Date = Date(),
                      cmpId: Int,

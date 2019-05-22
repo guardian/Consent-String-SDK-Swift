@@ -8,7 +8,7 @@
 
 import Foundation
 
-public enum VendorEncodingType: Int {
+enum VendorEncodingType: Int {
     case bitField
     case range
 }

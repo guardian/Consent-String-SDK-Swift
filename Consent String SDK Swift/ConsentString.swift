@@ -8,7 +8,7 @@
 
 import Foundation
 
-class ConsentString: ConsentStringProtocol {
+public class ConsentString: ConsentStringProtocol {
 
     static let bitFieldVendorStart: Int = 173
     static let rangeEntryOffset: Int = 186
