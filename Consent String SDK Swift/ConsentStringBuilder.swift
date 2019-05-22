@@ -15,7 +15,6 @@ public class ConsentStringBuilder {
     }
 
     private let version: Int = 1
-    var defaultConsent: Bool = false
 
     /// Build a v1 consent string
     ///
@@ -197,7 +196,6 @@ extension ConsentString {
                      defaultConsent: Bool = false,
                      allowedVendorIds: Set<Int>) throws {
         let builder = ConsentStringBuilder()
-        builder.defaultConsent = defaultConsent
         try self.init(consentString: try builder.build(created: created,
                                                        updated: updated,
                                                        cmpId: cmpId,
