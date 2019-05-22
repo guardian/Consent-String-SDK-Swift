@@ -8,6 +8,7 @@
 
 import Foundation
 
+/// The consent encoding used. Consent string encoding logic should choose the encoding that results in the smaller output.
 enum VendorEncodingType: Int {
     case bitField
     case range

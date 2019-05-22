@@ -8,7 +8,7 @@
 
 import Foundation
 
-/// Purposes are listed in the global Vendor List. Resultant consent value is the "AND" of the applicable bit(s) from this field and a vendor's specific consent bit. Purpose #1 maps to the first (most significant) bit, purpose #24 maps to the last (least significant) bit.
+/// Purposes are listed in the global Vendor List. Purpose #1 maps to the first (most significant) bit, purpose #24 maps to the last (least significant) bit.
 public struct Purposes: OptionSet {
 
     public static let storageAndAccess = Purposes(rawValue: 1 << 23)
