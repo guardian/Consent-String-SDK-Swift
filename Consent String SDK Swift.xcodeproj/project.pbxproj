@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		0B8FBC7222954495002F733D /* NSRange+ConsentString.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B8FBC7122954495002F733D /* NSRange+ConsentString.swift */; };
+		0B8FBC76229558F3002F733D /* VendorIdentifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B8FBC75229558F3002F733D /* VendorIdentifier.swift */; };
 		0BA327D3228EA54A00606697 /* ConsentStringBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BA327D2228EA54A00606697 /* ConsentStringBuilder.swift */; };
 		0BA327D5228EC1A300606697 /* Purpose.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BA327D4228EC1A300606697 /* Purpose.swift */; };
 		0BA327D9228EC84900606697 /* ConsentStringBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BA327D8228EC84900606697 /* ConsentStringBuilderTests.swift */; };
@@ -35,6 +36,7 @@
 
 /* Begin PBXFileReference section */
 		0B8FBC7122954495002F733D /* NSRange+ConsentString.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSRange+ConsentString.swift"; sourceTree = "<group>"; };
+		0B8FBC75229558F3002F733D /* VendorIdentifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VendorIdentifier.swift; sourceTree = "<group>"; };
 		0BA327D2228EA54A00606697 /* ConsentStringBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConsentStringBuilder.swift; sourceTree = "<group>"; };
 		0BA327D4228EC1A300606697 /* Purpose.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Purpose.swift; sourceTree = "<group>"; };
 		0BA327D8228EC84900606697 /* ConsentStringBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConsentStringBuilderTests.swift; sourceTree = "<group>"; };
@@ -102,6 +104,7 @@
 				F142B5242093A1C5001ABE60 /* Info.plist */,
 				0BA327D2228EA54A00606697 /* ConsentStringBuilder.swift */,
 				0BA327D4228EC1A300606697 /* Purpose.swift */,
+				0B8FBC75229558F3002F733D /* VendorIdentifier.swift */,
 				0B8FBC7122954495002F733D /* NSRange+ConsentString.swift */,
 				0BA327DA228ED14600606697 /* VendorEncodingType.swift */,
 			);
@@ -230,6 +233,7 @@
 			files = (
 				F142B5432093A207001ABE60 /* ConsentStringProtocol.swift in Sources */,
 				0BA327D5228EC1A300606697 /* Purpose.swift in Sources */,
+				0B8FBC76229558F3002F733D /* VendorIdentifier.swift in Sources */,
 				0BA327D3228EA54A00606697 /* ConsentStringBuilder.swift in Sources */,
 				0BA327DB228ED14600606697 /* VendorEncodingType.swift in Sources */,
 				0B8FBC7222954495002F733D /* NSRange+ConsentString.swift in Sources */,
