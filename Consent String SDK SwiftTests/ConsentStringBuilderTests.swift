@@ -60,4 +60,45 @@ class ConsentStringBuilderTests: XCTestCase, BinaryStringTestSupport {
         let vendorIds = ClosedRange<VendorIdentifier>(1...234).compactMap { $0.isMultiple(of: 2) ? nil : $0 }
          XCTAssertEqual(try builder.build(created: Date(timeIntervalSince1970: 1510082155.4), updated: Date(timeIntervalSince1970: 1510082155.4), cmpId: 7, cmpVersion: 1, consentScreenId: 3, consentLanguage: "EN", allowedPurposes: [.storageAndAccess, .personalization, .adSelection], vendorListVersion: 8, maxVendorId: 2011, defaultConsent: true, allowedVendorIds: Set(vendorIds)), "BOEFEAyOEFEAyAHABDENAI4AAAB9tVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
     }
+
+    func testFailsWithInvalidLanguageCode() {
+        XCTAssertThrowsError(try builder.build(cmpId: 0, cmpVersion: 0, consentScreenId: 0, consentLanguage: "z", allowedPurposes: [], vendorListVersion: 0, maxVendorId: 1, allowedVendorIds: [1])) { error in
+            guard case ConsentStringBuilder.Error.invalidLanguageCode("z") = error else {
+                XCTFail("unexpected error: \(error)")
+                return
+            }
+        }
+
+        XCTAssertThrowsError(try builder.build(cmpId: 0, cmpVersion: 0, consentScreenId: 0, consentLanguage: "45", allowedPurposes: [], vendorListVersion: 0, maxVendorId: 1, allowedVendorIds: [1])) { error in
+            guard case ConsentStringBuilder.Error.invalidLanguageCode("45") = error else {
+                XCTFail("unexpected error: \(error)")
+                return
+            }
+        }
+    }
+
+    func testConsentStringInitializer() throws {
+        let created = Date()
+        let updated = created.addingTimeInterval(50)
+        let cmpId = 1
+        let cmpVersion = 2
+        let consentScreenId = 3
+        let consentLanguage = "FR"
+        let allowedPurposes: Purposes = [.adSelection]
+        let vendorListVersion = 4
+        let maxVendorId: VendorIdentifier = 5
+        let allowedVendorIds = Set<VendorIdentifier>([2, 4])
+        let consentString = try ConsentString(created: created, updated: updated, cmpId: cmpId, cmpVersion: cmpVersion, consentScreenId: consentScreenId, consentLanguage: consentLanguage, allowedPurposes: allowedPurposes, vendorListVersion: vendorListVersion, maxVendorId: maxVendorId, allowedVendorIds: allowedVendorIds)
+        XCTAssertEqual(consentString.cmpId, cmpId)
+        XCTAssertEqual(consentString.consentLanguage, consentLanguage)
+        XCTAssertEqual(consentString.consentScreen, consentScreenId)
+        XCTAssertEqual(consentString.maxVendorId, Int(maxVendorId))
+        XCTAssertEqual(consentString.purposesAllowed, [3])
+        XCTAssertEqual(consentString.vendorListVersion, vendorListVersion)
+        XCTAssertFalse(consentString.isVendorAllowed(vendorId: 1))
+        XCTAssertTrue(consentString.isVendorAllowed(vendorId: 2))
+        XCTAssertFalse(consentString.isVendorAllowed(vendorId: 3))
+        XCTAssertTrue(consentString.isVendorAllowed(vendorId: 4))
+        XCTAssertFalse(consentString.isVendorAllowed(vendorId: 5))
+    }
 }

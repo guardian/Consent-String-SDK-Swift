@@ -54,7 +54,7 @@ public class ConsentStringBuilder {
         consentString.append(encode(integer: cmpVersion, toLength: NSRange.cmpVersion.length))
         consentString.append(encode(integer: consentScreenId, toLength: NSRange.consentScreen.length))
 
-        guard let firstLanguageCharacter = consentLanguage.uppercased()[consentLanguage.index(consentLanguage.startIndex, offsetBy: 0)].asciiValue, firstLanguageCharacter >= asciiOffset,
+        guard consentLanguage.count == 2, let firstLanguageCharacter = consentLanguage.uppercased()[consentLanguage.index(consentLanguage.startIndex, offsetBy: 0)].asciiValue, firstLanguageCharacter >= asciiOffset,
             let secondLanguageCharacter = consentLanguage.uppercased()[consentLanguage.index(consentLanguage.startIndex, offsetBy: 1)].asciiValue, secondLanguageCharacter >= asciiOffset else {
             throw Error.invalidLanguageCode(consentLanguage)
         }
