@@ -1,14 +1,14 @@
 //
-//  Constants.swift
+//  NSRange+ConsentString.swift
 //  Consent String SDK Swift
 //
-//  Created by Alexander Edge on 17/05/2019.
+//  Created by Alexander Edge on 22/05/2019.
 //  Copyright © 2019 Interactive Advertising Bureau. All rights reserved.
 //
 
 import Foundation
 
-public enum Constants {
+extension NSRange {
     static let version = NSRange(location: 0, length: 6)
     static let created = NSRange(location: 6, length: 36)
     static let updated = NSRange(location: 42, length: 36)
@@ -20,9 +20,6 @@ public enum Constants {
     static let purposes = NSRange(location: 132, length: 24)
     static let maxVendorIdentifier = NSRange(location: 156, length: 16)
     static let encodingType = NSRange(location: 172, length: 1)
-    static let vendorBitFieldOffset = 173
     static let defaultConsent = NSRange(location: 173, length: 1)
     static let numberOfEntries = NSRange(location: 174, length: 12)
-    static let rangeEntryOffset = 186
-    static let vendorIdentifierSize = 16
 }

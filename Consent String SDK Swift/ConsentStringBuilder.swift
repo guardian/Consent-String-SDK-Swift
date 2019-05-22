@@ -8,65 +8,36 @@
 
 import Foundation
 
-public struct ConsentStringBuilder {
+public class ConsentStringBuilder {
 
     enum Error: Swift.Error {
         case invalidLanguageCode
     }
 
-    let version: Int = 1
-    
-    /// Epoch deciseconds when record was created
-    let created: Date
+    private let version: Int = 1
+    var defaultConsent: Bool = false
 
-    /// Epoch deciseconds when consent string was last updated
-    let updated: Date
-
-    /// Consent Manager Provider ID that last updated the consent string
-    let cmpId: Int
-
-    /// Consent Manager Provider version
-    let cmpVersion: Int
-
-    /// Screen number in the CMP where consent was given
-    let consentScreenId: Int
-
-    /// Two-letter ISO639-1 language code that CMP asked for consent in
-    let consentLanguage: String
-
-    /// Set of allowed purposes
-    let allowedPurposes: Set<Int>
-
-    /// Version of vendor list used in most recent consent string update
-    let vendorListVersion: Int
-
-    /// The maximum VendorId for which consent values are given.
-    let maxVendorId: Int
-
-    let defaultConsent: Bool
-
-    /// Set of allowed vendor IDs
-    let allowedVendorIds: Set<Int>
-
-    init(created: Date = Date(), updated: Date = Date(), cmpId: Int, cmpVersion: Int, consentScreenId: Int, consentLanguage: String, allowedPurposes: Set<Int>, vendorListVersion: Int, maxVendorId: Int, defaultConsent: Bool, allowedVendorIds: Set<Int>) {
-        self.created = created
-        self.updated = updated
-        self.cmpId = cmpId
-        self.cmpVersion = cmpVersion
-        self.consentScreenId = consentScreenId
-        self.consentLanguage = consentLanguage
-        self.allowedPurposes = allowedPurposes
-        self.vendorListVersion = vendorListVersion
-        self.maxVendorId = maxVendorId
-        self.defaultConsent = defaultConsent
-        self.allowedVendorIds = allowedVendorIds
-    }
-
-    public func build() throws -> String {
-        let commonBinaryString = try commonConsentBinaryString()
+    /// Build a v1 consent string
+    ///
+    /// - Parameters:
+    ///   - created: Date when consent string was created
+    ///   - updated: Date when consent string was last updated
+    ///   - cmpId: Consent Manager Provider ID that last updated the consent string
+    ///   - cmpVersion: Consent Manager Provider version
+    ///   - consentScreenId: Screen number in the CMP where consent was given
+    ///   - consentLanguage: Two-letter ISO639-1 language code that CMP asked for consent in
+    ///   - allowedPurposes: Set of allowed purposes
+    ///   - vendorListVersion: Version of vendor list used in most recent consent string update
+    ///   - maxVendorId: The maximum VendorId for which consent values are given.
+    ///   - defaultConsent: Default consent for VendorIds not covered by a RangeEntry. VendorIds covered by a RangeEntry have a consent value the opposite of DefaultConsent
+    ///   - allowedVendorIds: VendorIds with consent
+    /// - Returns: An encoded consent string
+    /// - Throws: Error is string cannot be created
+    public func build(created: Date = Date(), updated: Date = Date(), cmpId: Int, cmpVersion: Int, consentScreenId: Int, consentLanguage: String, allowedPurposes: Set<Int>, vendorListVersion: Int, maxVendorId: Int, defaultConsent: Bool = false, allowedVendorIds: Set<Int>) throws -> String {
+        let commonBinaryString = try commonConsentBinaryString(created: created, updated: updated, cmpId: cmpId, cmpVersion: cmpVersion, consentScreenId: consentScreenId, consentLanguage: consentLanguage, allowedPurposes: allowedPurposes, vendorListVersion: vendorListVersion, maxVendorId: maxVendorId)
         // we encode by both methods (bit field and ranges) and use whichever is smallest
-        let encodingUsingBitField = convertBinaryStringToTrimmedBase64String(padStringToNearestByte(commonBinaryString + bitFieldBinaryString))
-        let encodingUsingRanges = convertBinaryStringToTrimmedBase64String(padStringToNearestByte(commonBinaryString + rangesBinaryString))
+        let encodingUsingBitField = convertBinaryStringToTrimmedBase64String(padStringToNearestByte(commonBinaryString + bitFieldBinaryString(allowedVendorIds: allowedVendorIds, maxVendorId: maxVendorId)))
+        let encodingUsingRanges = convertBinaryStringToTrimmedBase64String(padStringToNearestByte(commonBinaryString + rangesBinaryString(allowedVendorIds: allowedVendorIds, maxVendorId: maxVendorId, defaultConsent: defaultConsent)))
         if encodingUsingBitField.count < encodingUsingRanges.count {
             return encodingUsingBitField
         } else {
@@ -74,39 +45,39 @@ public struct ConsentStringBuilder {
         }
     }
 
-    func commonConsentBinaryString() throws -> String {
+    func commonConsentBinaryString(created: Date, updated: Date, cmpId: Int, cmpVersion: Int, consentScreenId: Int, consentLanguage: String, allowedPurposes: Set<Int>, vendorListVersion: Int, maxVendorId: Int) throws -> String {
         var consentString = ""
-        consentString.append(encode(integer: version, toLength: Constants.version.length))
-        consentString.append(encode(date: created, toLength: Constants.created.length))
-        consentString.append(encode(date: updated, toLength: Constants.updated.length))
-        consentString.append(encode(integer: cmpId, toLength: Constants.cmpIdentifier.length))
-        consentString.append(encode(integer: cmpVersion, toLength: Constants.cmpVersion.length))
-        consentString.append(encode(integer: consentScreenId, toLength: Constants.consentScreen.length))
+        consentString.append(encode(integer: version, toLength: NSRange.version.length))
+        consentString.append(encode(date: created, toLength: NSRange.created.length))
+        consentString.append(encode(date: updated, toLength: NSRange.updated.length))
+        consentString.append(encode(integer: cmpId, toLength: NSRange.cmpIdentifier.length))
+        consentString.append(encode(integer: cmpVersion, toLength: NSRange.cmpVersion.length))
+        consentString.append(encode(integer: consentScreenId, toLength: NSRange.consentScreen.length))
 
         guard let firstLanguageCharacter = consentLanguage[consentLanguage.index(consentLanguage.startIndex, offsetBy: 0)].asciiValue,
             let secondLanguageCharacter = consentLanguage[consentLanguage.index(consentLanguage.startIndex, offsetBy: 1)].asciiValue else {
             throw Error.invalidLanguageCode
         }
 
-        consentString.append(encode(integer: Int(firstLanguageCharacter - 65), toLength: Constants.consentLanguage.length / 2))
-        consentString.append(encode(integer: Int(secondLanguageCharacter - 65), toLength: Constants.consentLanguage.length / 2))
-        consentString.append(encode(integer: vendorListVersion, toLength: Constants.vendorListVersion.length))
+        consentString.append(encode(integer: Int(firstLanguageCharacter - 65), toLength: NSRange.consentLanguage.length / 2))
+        consentString.append(encode(integer: Int(secondLanguageCharacter - 65), toLength: NSRange.consentLanguage.length / 2))
+        consentString.append(encode(integer: vendorListVersion, toLength: NSRange.vendorListVersion.length))
         consentString.append(encode(purposeBitFieldForPurposes: allowedPurposes))
-        consentString.append(encode(integer: maxVendorId, toLength: Constants.maxVendorIdentifier.length))
+        consentString.append(encode(integer: maxVendorId, toLength: NSRange.maxVendorIdentifier.length))
         return consentString
     }
 
-    var bitFieldBinaryString: String {
+    func bitFieldBinaryString(allowedVendorIds: Set<Int>, maxVendorId: Int) -> String {
         var consentString = ""
-        consentString.append(encode(integer: VendorEncodingType.bitField.rawValue, toLength: Constants.encodingType.length))
+        consentString.append(encode(integer: VendorEncodingType.bitField.rawValue, toLength: NSRange.encodingType.length))
         consentString.append(encode(vendorBitFieldForVendors: allowedVendorIds, maxVendorId: maxVendorId))
         return consentString
     }
 
-    var rangesBinaryString: String {
+    func rangesBinaryString(allowedVendorIds: Set<Int>, maxVendorId: Int, defaultConsent: Bool) -> String {
         var consentString = ""
-        consentString.append(encode(integer: VendorEncodingType.range.rawValue, toLength: Constants.encodingType.length))
-        consentString.append(encode(integer: defaultConsent ? 1 : 0, toLength: Constants.defaultConsent.length))
+        consentString.append(encode(integer: VendorEncodingType.range.rawValue, toLength: NSRange.encodingType.length))
+        consentString.append(encode(integer: defaultConsent ? 1 : 0, toLength: NSRange.defaultConsent.length))
         consentString.append(encode(vendorRanges: ranges(for: allowedVendorIds, in: Set(1...maxVendorId), defaultConsent: defaultConsent)))
         return consentString
     }
@@ -131,7 +102,7 @@ public struct ConsentStringBuilder {
     }
 
     func encode(purposeBitFieldForPurposes purposes: Set<Int>) -> String {
-        return (0..<Constants.purposes.length).reduce("") { $0 + (purposes.contains($1 + 1) ? "1" : "0") }
+        return (0..<NSRange.purposes.length).reduce("") { $0 + (purposes.contains($1 + 1) ? "1" : "0") }
     }
 
     func encode(vendorBitFieldForVendors vendors: Set<Int>, maxVendorId: Int) -> String {
@@ -140,17 +111,17 @@ public struct ConsentStringBuilder {
 
     func encode(vendorRanges ranges: [ClosedRange<Int>]) -> String {
         var string = ""
-        string.append(encode(integer: ranges.count, toLength: Constants.numberOfEntries.length))
+        string.append(encode(integer: ranges.count, toLength: NSRange.numberOfEntries.length))
         for range in ranges {
             if range.count == 1 {
                 // single entry
                 string.append(encode(integer: 0, toLength: 1))
-                string.append(encode(integer: range.lowerBound, toLength: Constants.vendorIdentifierSize))
+                string.append(encode(integer: range.lowerBound, toLength: ConsentString.vendorIdentifierSize))
             } else {
                 // range entry
                 string.append(encode(integer: 1, toLength: 1))
-                string.append(encode(integer: range.lowerBound, toLength: Constants.vendorIdentifierSize))
-                string.append(encode(integer: range.upperBound, toLength: Constants.vendorIdentifierSize))
+                string.append(encode(integer: range.lowerBound, toLength: ConsentString.vendorIdentifierSize))
+                string.append(encode(integer: range.upperBound, toLength: ConsentString.vendorIdentifierSize))
             }
         }
         return string
@@ -184,7 +155,7 @@ public struct ConsentStringBuilder {
 
 }
 
-extension String {
+private extension String {
     func padLeft(withCharacter character: String = "0", toLength length: Int) -> String {
         let padCount = length - count
         guard padCount > 0 else { return self }
@@ -198,7 +169,7 @@ extension String {
     }
 }
 
-extension String {
+private extension String {
     func split(by length: Int) -> [String] {
         var startIndex = self.startIndex
         var results = [Substring]()
@@ -214,20 +185,29 @@ extension String {
 }
 
 extension ConsentString {
-
-    convenience init(created: Date, updated: Date, cmpId: Int, cmpVersion: Int, consentScreenId: Int, consentLanguage: String, allowedPurposes: Set<Int>, vendorListVersion: Int, maxVendorId: Int, allowedVendorIds: Set<Int>) throws {
-        let builder = ConsentStringBuilder(created: created,
-                                           updated: updated, 
-                                           cmpId: cmpId,
-                                           cmpVersion: cmpVersion,
-                                           consentScreenId: consentScreenId,
-                                           consentLanguage: consentLanguage,
-                                           allowedPurposes: allowedPurposes,
-                                           vendorListVersion: vendorListVersion,
-                                           maxVendorId: maxVendorId,
-                                           defaultConsent: false,
-                                           allowedVendorIds: allowedVendorIds)
-        try self.init(consentString: try builder.build())
+    convenience init(created: Date = Date(),
+                     updated: Date = Date(),
+                     cmpId: Int,
+                     cmpVersion: Int,
+                     consentScreenId: Int,
+                     consentLanguage: String,
+                     allowedPurposes: Set<Int>,
+                     vendorListVersion: Int,
+                     maxVendorId: Int,
+                     defaultConsent: Bool = false,
+                     allowedVendorIds: Set<Int>) throws {
+        let builder = ConsentStringBuilder()
+        builder.defaultConsent = defaultConsent
+        try self.init(consentString: try builder.build(created: created,
+                                                       updated: updated,
+                                                       cmpId: cmpId,
+                                                       cmpVersion: cmpVersion,
+                                                       consentScreenId: consentScreenId,
+                                                       consentLanguage: consentLanguage,
+                                                       allowedPurposes: allowedPurposes,
+                                                       vendorListVersion: vendorListVersion,
+                                                       maxVendorId: maxVendorId,
+                                                       defaultConsent: defaultConsent,
+                                                       allowedVendorIds: allowedVendorIds))
     }
-
 }
