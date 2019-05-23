@@ -37,9 +37,16 @@ public class ConsentStringBuilder {
     /// - Throws: Error is string cannot be created
     public func build(created: Date = Date(), updated: Date = Date(), cmpId: Int, cmpVersion: Int, consentScreenId: Int, consentLanguage: String, allowedPurposes: Purposes, vendorListVersion: Int, maxVendorId: VendorIdentifier, defaultConsent: Bool = false, allowedVendorIds: Set<VendorIdentifier>) throws -> String {
         let commonBinaryString = try commonConsentBinaryString(created: created, updated: updated, cmpId: cmpId, cmpVersion: cmpVersion, consentScreenId: consentScreenId, consentLanguage: consentLanguage, allowedPurposes: allowedPurposes, vendorListVersion: vendorListVersion, maxVendorId: maxVendorId)
+
         // we encode by both methods (bit field and ranges) and use whichever is smallest
-        let encodingUsingBitField = convertBinaryStringToTrimmedBase64String(padStringToNearestByte(commonBinaryString + bitFieldBinaryString(allowedVendorIds: allowedVendorIds, maxVendorId: maxVendorId)))
-        let encodingUsingRanges = convertBinaryStringToTrimmedBase64String(padStringToNearestByte(commonBinaryString + rangesBinaryString(allowedVendorIds: allowedVendorIds, maxVendorId: maxVendorId, defaultConsent: defaultConsent)))
+        let encodingUsingBitField = (commonBinaryString + bitFieldBinaryString(allowedVendorIds: allowedVendorIds, maxVendorId: maxVendorId))
+            .padRight(toNearestMultipleOf: 8)
+            .trimmedWebSafeBase64EncodedString()
+
+        let encodingUsingRanges = (commonBinaryString + rangesBinaryString(allowedVendorIds: allowedVendorIds, maxVendorId: maxVendorId, defaultConsent: defaultConsent))
+            .padRight(toNearestMultipleOf: 8)
+            .trimmedWebSafeBase64EncodedString()
+
         if encodingUsingBitField.count < encodingUsingRanges.count {
             return encodingUsingBitField
         } else {
@@ -82,17 +89,6 @@ public class ConsentStringBuilder {
         consentString.append(encode(integer: defaultConsent ? 1 : 0, toLength: NSRange.defaultConsent.length))
         consentString.append(encode(vendorRanges: ranges(for: allowedVendorIds, in: Set(1...maxVendorId), defaultConsent: defaultConsent)))
         return consentString
-    }
-
-    func convertBinaryStringToTrimmedBase64String(_ string: String) -> String {
-        let data = Data(bytes: string.split(by: 8).compactMap { UInt8($0, radix: 2) })
-        return data.base64EncodedString().trimmingCharacters(in: ["="])
-    }
-
-    func padStringToNearestByte(_ string: String) -> String {
-        let (byteCount, bitRemainder) = string.count.quotientAndRemainder(dividingBy: 8)
-        let totalBytes = byteCount + (bitRemainder > 0 ? 1 : 0)
-        return string.padRight(toLength: totalBytes * 8)
     }
 
     func encode(integer: UInt8, toLength length: Int) -> String {
@@ -177,9 +173,13 @@ private extension String {
         guard padCount > 0 else { return self }
         return self + String(repeating: character, count: padCount)
     }
-}
 
-private extension String {
+    func padRight(withCharacter character: String = "0", toNearestMultipleOf multiple: Int) -> String {
+        let (byteCount, bitRemainder) = count.quotientAndRemainder(dividingBy: multiple)
+        let totalBytes = byteCount + (bitRemainder > 0 ? 1 : 0)
+        return padRight(toLength: totalBytes * multiple)
+    }
+
     func split(by length: Int) -> [String] {
         var startIndex = self.startIndex
         var results = [Substring]()
@@ -191,6 +191,12 @@ private extension String {
         }
 
         return results.map { String($0) }
+    }
+
+    func trimmedWebSafeBase64EncodedString() -> String {
+        let data = Data(bytes: split(by: 8).compactMap { UInt8($0, radix: 2) })
+        return data.base64EncodedString()
+            .trimmingCharacters(in: ["="])
     }
 }
 
