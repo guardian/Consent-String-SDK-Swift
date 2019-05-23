@@ -39,11 +39,13 @@ public class ConsentStringBuilder {
         let commonBinaryString = try commonConsentBinaryString(created: created, updated: updated, cmpId: cmpId, cmpVersion: cmpVersion, consentScreenId: consentScreenId, consentLanguage: consentLanguage, allowedPurposes: allowedPurposes, vendorListVersion: vendorListVersion, maxVendorId: maxVendorId)
 
         // we encode by both methods (bit field and ranges) and use whichever is smallest
-        let encodingUsingBitField = (commonBinaryString + bitFieldBinaryString(allowedVendorIds: allowedVendorIds, maxVendorId: maxVendorId))
+        let encodingUsingBitField = commonBinaryString
+            .appending(bitFieldBinaryString(allowedVendorIds: allowedVendorIds, maxVendorId: maxVendorId))
             .padRight(toNearestMultipleOf: 8)
             .trimmedWebSafeBase64EncodedString()
 
-        let encodingUsingRanges = (commonBinaryString + rangesBinaryString(allowedVendorIds: allowedVendorIds, maxVendorId: maxVendorId, defaultConsent: defaultConsent))
+        let encodingUsingRanges = commonBinaryString
+            .appending(rangesBinaryString(allowedVendorIds: allowedVendorIds, maxVendorId: maxVendorId, defaultConsent: defaultConsent))
             .padRight(toNearestMultipleOf: 8)
             .trimmedWebSafeBase64EncodedString()
 
