@@ -104,7 +104,7 @@ public class ConsentStringBuilder {
     }
 
     func encode(date: Date, toLength length: Int) -> String {
-        return encode(integer: Int(date.timeIntervalSince1970 * 1000 / 100), toLength: length)
+        return encode(integer: Int(date.timeIntervalSince1970 * 10), toLength: length)
     }
 
     func encode(purposeBitFieldForPurposes purposes: Purposes) -> String {
