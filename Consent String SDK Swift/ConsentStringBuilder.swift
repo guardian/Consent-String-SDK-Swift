@@ -197,6 +197,8 @@ private extension String {
         let data = Data(bytes: split(by: 8).compactMap { UInt8($0, radix: 2) })
         return data.base64EncodedString()
             .trimmingCharacters(in: ["="])
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
     }
 }
 

@@ -77,6 +77,10 @@ class ConsentStringBuilderTests: XCTestCase, BinaryStringTestSupport {
         }
     }
 
+    func testUsesWebSafeBase64EncodedString() {
+        XCTAssertEqual(try builder.build(created: Date(timeIntervalSince1970: 1510082155.4), updated: Date(timeIntervalSince1970: 1510082155.4), cmpId: 0, cmpVersion: 0, consentScreenId: 0, consentLanguage: "EN", allowedPurposes: .all, vendorListVersion: 1, maxVendorId: 100, defaultConsent: false, allowedVendorIds: [1,2,51,99,100]), "BOEFEAyOEFEAyAAAAAENAB-AAAAGSADgACAAQAM4AxgDIA")
+    }
+
     func testConsentStringInitializer() throws {
         let created = Date()
         let updated = created.addingTimeInterval(50)
