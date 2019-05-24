@@ -52,13 +52,25 @@ class ConsentStringBuilderTests: XCTestCase, BinaryStringTestSupport {
         XCTAssertEqual(builder.encode(vendorRanges: [1...3, 9...9]), "00000000001010000000000000001000000000000001100000000000001001")
     }
 
+    func testRangesWithDefaultConsent() {
+        let allVendorIds = Set<VendorIdentifier>(0...10)
+        let allowedVendorIds = Set<VendorIdentifier>(1...3)
+        XCTAssertEqual(builder.ranges(for: allowedVendorIds, in: allVendorIds, defaultConsent: true), [0...0, 4...10])
+    }
+
+    func testRangesWithoutDefaultConsent() {
+        let allVendorIds = Set<VendorIdentifier>(0...10)
+        let allowedVendorIds = Set<VendorIdentifier>(1...3)
+        XCTAssertEqual(builder.ranges(for: allowedVendorIds, in: allVendorIds, defaultConsent: false), [1...3])
+    }
+
     func testUsesRangesOverBitField() throws {
         XCTAssertEqual(try builder.build(created: Date(timeIntervalSince1970: 1510082155.4), updated: Date(timeIntervalSince1970: 1510082155.4), cmpId: 7, cmpVersion: 1, consentScreenId: 3, consentLanguage: "EN", allowedPurposes: [.storageAndAccess, .personalization, .adSelection], vendorListVersion: 8, maxVendorId: 2011, defaultConsent: true, allowedVendorIds: Set<VendorIdentifier>(1...2011).subtracting([9])), "BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA")
     }
 
     func testUsesBitFieldOverRanges() throws {
         let vendorIds = ClosedRange<VendorIdentifier>(1...234).compactMap { $0.isMultiple(of: 2) ? nil : $0 }
-         XCTAssertEqual(try builder.build(created: Date(timeIntervalSince1970: 1510082155.4), updated: Date(timeIntervalSince1970: 1510082155.4), cmpId: 7, cmpVersion: 1, consentScreenId: 3, consentLanguage: "EN", allowedPurposes: [.storageAndAccess, .personalization, .adSelection], vendorListVersion: 8, maxVendorId: 2011, defaultConsent: true, allowedVendorIds: Set(vendorIds)), "BOEFEAyOEFEAyAHABDENAI4AAAB9tVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+        XCTAssertEqual(try builder.build(created: Date(timeIntervalSince1970: 1510082155.4), updated: Date(timeIntervalSince1970: 1510082155.4), cmpId: 7, cmpVersion: 1, consentScreenId: 3, consentLanguage: "EN", allowedPurposes: [.storageAndAccess, .personalization, .adSelection], vendorListVersion: 8, maxVendorId: 2011, defaultConsent: true, allowedVendorIds: Set(vendorIds)), "BOEFEAyOEFEAyAHABDENAI4AAAB9tVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
     }
 
     func testFailsWithInvalidLanguageCode() {
